@@ -1,0 +1,25 @@
+# compiled output
+/dist
+/node_modules
+
+# logs
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# env
+.env
+.env.production
+
+# ide
+.idea/
+.vscode/
+*.swp
+*.iml
+
+# coverage
+/coverage
