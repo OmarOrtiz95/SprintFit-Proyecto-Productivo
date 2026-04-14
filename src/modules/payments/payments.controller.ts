@@ -12,12 +12,9 @@ export class PaymentsController {
     @Post('process')
     @UseGuards(AuthGuard('jwt'))
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Process a payment for an order' })
+    @ApiOperation({ summary: 'Initiate a Wompi payment for an order' })
     createPayment(@Body() createPaymentDto: CreatePaymentDto) {
-        return this.paymentsService.createPayment(
-            createPaymentDto.orderId,
-            createPaymentDto.cardDetails
-        );
+        return this.paymentsService.createWompiPayment(createPaymentDto.orderId);
     }
 
     @Post('webhook')

@@ -18,7 +18,7 @@ export class ProductsService {
             throw new ConflictException(`Product with SKU ${productData.sku} already exists`);
         }
 
-        return this.prisma.product.create({
+        const product = await this.prisma.product.create({
             data: {
                 ...productData,
                 images: {
@@ -30,15 +30,25 @@ export class ProductsService {
                 category: true,
             },
         });
+        
+        return {
+            ...product,
+            price: Number(product.price)
+        };
     }
 
     async findAll() {
-        return this.prisma.product.findMany({
+        const products = await this.prisma.product.findMany({
             include: {
                 images: true,
                 category: true,
             },
         });
+        
+        return products.map(p => ({
+            ...p,
+            price: Number(p.price)
+        }));
     }
 
     async findOne(id: number) {
@@ -54,7 +64,10 @@ export class ProductsService {
             throw new NotFoundException(`Product with ID ${id} not found`);
         }
 
-        return product;
+        return {
+            ...product,
+            price: Number(product.price)
+        };
     }
 
     async update(id: number, updateProductDto: UpdateProductDto) {
@@ -71,7 +84,7 @@ export class ProductsService {
             }
         }
 
-        return this.prisma.product.update({
+        const product = await this.prisma.product.update({
             where: { id },
             data: {
                 ...productData,
@@ -87,6 +100,11 @@ export class ProductsService {
                 images: true,
             },
         });
+
+        return {
+            ...product,
+            price: Number(product.price)
+        };
     }
 
     async remove(id: number) {

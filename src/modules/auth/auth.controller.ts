@@ -1,7 +1,7 @@
-import { Controller, Request, Post, UseGuards, Body, Get, UsePipes, ValidationPipe, UnauthorizedException } from '@nestjs/common';
+import { Controller, Request, Post, UseGuards, Body, Get, Query, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 
 @ApiTags('Auth')
@@ -28,6 +28,13 @@ export class AuthController {
     @UseGuards(AuthGuard('jwt'))
     @Get('profile')
     getProfile(@Request() req) {
-        return req.user;
+        return this.authService.getProfile(req.user.id);
+    }
+
+    @Get('verify-email')
+    @ApiOperation({ summary: 'Verify user email via token' })
+    @ApiQuery({ name: 'token', required: true })
+    async verifyEmail(@Query('token') token: string) {
+        return this.authService.verifyEmail(token);
     }
 }

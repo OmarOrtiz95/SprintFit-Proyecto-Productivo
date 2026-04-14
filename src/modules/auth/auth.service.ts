@@ -3,12 +3,14 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
+        private emailService: EmailService,
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -35,6 +37,24 @@ export class AuthService {
 
     async register(userData: any) {
         const user = await this.usersService.create(userData);
+        await this.emailService.sendVerificationEmail(user.id, user.email);
         return this.login(user);
+    }
+
+    async verifyEmail(token: string) {
+        const verified = await this.emailService.verifyEmailToken(token);
+        if (!verified) {
+            throw new UnauthorizedException('Invalid or expired verification token');
+        }
+        return { message: 'Email successfully verified' };
+    }
+
+    async getProfile(userId: number) {
+        const user = await this.usersService.findById(userId);
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+        const { passwordHash, ...safeUser } = user;
+        return safeUser;
     }
 }

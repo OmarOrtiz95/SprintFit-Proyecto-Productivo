@@ -39,4 +39,70 @@ export class UsersService {
             },
         });
     }
+
+    async getAddresses(userId: number) {
+        return this.prisma.shippingAddress.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async addAddress(userId: number, data: any) {
+        if (data.isDefault) {
+            await this.prisma.shippingAddress.updateMany({
+                where: { userId },
+                data: { isDefault: false }
+            });
+        }
+        return this.prisma.shippingAddress.create({
+            data: {
+                userId,
+                ...data
+            }
+        });
+    }
+
+    async updateAddress(userId: number, addressId: number, data: any) {
+        if (data.isDefault) {
+            await this.prisma.shippingAddress.updateMany({
+                where: { userId },
+                data: { isDefault: false }
+            });
+        }
+        return this.prisma.shippingAddress.update({
+            where: { id: addressId, userId },
+            data
+        });
+    }
+
+    async deleteAddress(userId: number, addressId: number) {
+        return this.prisma.shippingAddress.delete({
+            where: { id: addressId, userId }
+        });
+    }
+
+    async updateProfile(userId: number, data: { fullName?: string; phone?: string; email?: string }) {
+        if (data.email) {
+            const existing = await this.findOne(data.email);
+            if (existing && existing.id !== userId) {
+                throw new ConflictException('Email already exists');
+            }
+        }
+        const updated = await this.prisma.user.update({
+            where: { id: userId },
+            data
+        });
+        const { passwordHash, ...safeUser } = updated;
+        return safeUser;
+    }
+
+    async changePassword(userId: number, newPassword: string) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const updated = await this.prisma.user.update({
+            where: { id: userId },
+            data: { passwordHash: hashedPassword }
+        });
+        const { passwordHash, ...safeUser } = updated;
+        return safeUser;
+    }
 }
