@@ -23,3 +23,4 @@ export class PaymentsController {
         return this.paymentsService.handleWebhook(payload);
     }
 }
+
