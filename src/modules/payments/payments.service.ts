@@ -42,7 +42,7 @@ export class PaymentsService {
             amountInCents,
             currency: 'COP',
             publicKey,
-            redirectUrl: 'http://localhost:5173/payment-result'
+            redirectUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-result`
         };
     }
 

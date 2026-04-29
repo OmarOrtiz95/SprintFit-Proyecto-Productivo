@@ -22,7 +22,8 @@ export class EmailService {
         });
 
         // Mock send email
-        const verificationUrl = `http://localhost:5173/verify-email?token=${token}`;
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
         this.logger.log(`[MOCK EMAIL] To: ${email}`);
         this.logger.log(`[MOCK EMAIL] Subject: Verifica tu cuenta en SprintFit`);
         this.logger.log(`[MOCK EMAIL] Body: Haz clic en el siguiente enlace para verificar tu correo: ${verificationUrl}`);
