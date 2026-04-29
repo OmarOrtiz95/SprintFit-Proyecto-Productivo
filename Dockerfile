@@ -1,24 +1,13 @@
-# Stage 1: Builder
+
 FROM node:18-alpine AS builder
-
 WORKDIR /app
-
-# Install openssl for Prisma
 RUN apk add --no-cache openssl
-
-# Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
-
-# Install dependencies
 RUN npm ci --legacy-peer-deps
-
-# Copy the rest of the application code
 COPY . .
-
-# Generate Prisma client and build NestJS app
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && npm run seed:compile
 
 # Stage 2: Production
 FROM node:18-alpine AS production
@@ -37,8 +26,11 @@ COPY prisma ./prisma/
 
 # Install only production dependencies
 RUN npm ci --omit=dev --legacy-peer-deps
-# Instalamos prisma CLI de forma ligera para poder correr migraciones
-RUN npm install prisma --no-save --legacy-peer-deps
+# Instalamos prisma CLI y ts-node de forma ligera para poder correr migraciones y seedeo
+RUN npm install prisma ts-node --no-save --legacy-peer-deps
+
+# Añadimos los binarios de node_modules al PATH para que Prisma encuentre ts-node
+ENV PATH=/app/node_modules/.bin:$PATH
 
 # Copy built application and generated Prisma client from builder
 COPY --from=builder /app/dist ./dist
@@ -48,5 +40,5 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # Expose port
 EXPOSE 3000
 
-# Run migrations and start the application
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+# Run migrations, seed the database, and start the application
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js && npm run start:prod"]

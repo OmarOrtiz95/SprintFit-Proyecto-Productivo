@@ -23,6 +23,7 @@ async function main() {
                 fullName: 'Administrador SprintFit',
                 passwordHash: passwordHash,
                 role: Role.ADMIN,
+                isEmailVerified: true,
             },
         });
 
