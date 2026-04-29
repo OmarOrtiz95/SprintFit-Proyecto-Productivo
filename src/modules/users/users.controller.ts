@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, Body, UseGuards, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { CreateShippingAddressDto, UpdateShippingAddressDto } from './dto/shipping-address.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -18,13 +19,15 @@ export class UsersController {
 
     @Post('addresses')
     @ApiOperation({ summary: 'Add a new shipping address' })
-    addAddress(@Request() req: any, @Body() body: any) {
+    @ApiBody({ type: CreateShippingAddressDto })
+    addAddress(@Request() req: any, @Body() body: CreateShippingAddressDto) {
         return this.usersService.addAddress(req.user.id, body);
     }
 
     @Patch('addresses/:id')
     @ApiOperation({ summary: 'Update shipping address' })
-    updateAddress(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    @ApiBody({ type: UpdateShippingAddressDto })
+    updateAddress(@Request() req: any, @Param('id', ParseIntPipe) id: number, @Body() body: UpdateShippingAddressDto) {
         return this.usersService.updateAddress(req.user.id, id, body);
     }
 
