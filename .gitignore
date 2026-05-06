@@ -23,3 +23,9 @@ Thumbs.db
 
 # coverage
 /coverage
+
+# uploads (keep directory structure)
+/uploads/*
+!/uploads/products/
+/uploads/products/*
+!/uploads/products/.gitkeep

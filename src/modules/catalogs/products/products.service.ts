@@ -2,21 +2,38 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../../database/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import * as fs from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class ProductsService {
     constructor(private prisma: PrismaService) { }
 
-    async create(createProductDto: CreateProductDto) {
-        const { images, ...productData } = createProductDto;
+    private deleteFile(url: string) {
+        if (!url || url.startsWith('http')) return; // Don't delete external URLs
+        const filePath = join(process.cwd(), url);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    }
+
+    async create(createProductDto: CreateProductDto, files: Express.Multer.File[]) {
+        const productData = createProductDto;
 
         const existing = await this.prisma.product.findUnique({
             where: { sku: productData.sku },
         });
 
         if (existing) {
+            // Delete uploaded files if creation fails
+            files.forEach(file => this.deleteFile(join('uploads/products', file.filename)));
             throw new ConflictException(`Product with SKU ${productData.sku} already exists`);
         }
+
+        const images = files.map((file, index) => ({
+            url: `/uploads/products/${file.filename}`,
+            displayOrder: index,
+        }));
 
         const product = await this.prisma.product.create({
             data: {
@@ -30,7 +47,7 @@ export class ProductsService {
                 category: true,
             },
         });
-        
+
         return {
             ...product,
             price: Number(product.price)
@@ -44,7 +61,7 @@ export class ProductsService {
                 category: true,
             },
         });
-        
+
         return products.map(p => ({
             ...p,
             price: Number(p.price)
@@ -70,31 +87,47 @@ export class ProductsService {
         };
     }
 
-    async update(id: number, updateProductDto: UpdateProductDto) {
-        const { images, ...productData } = updateProductDto;
+    async update(id: number, updateProductDto: UpdateProductDto, files: Express.Multer.File[]) {
+        const { existingImages, ...productData } = updateProductDto;
+        const parsedExistingImages: string[] = existingImages ? JSON.parse(existingImages) : [];
 
-        await this.findOne(id);
+        const currentProduct = await this.findOne(id);
 
         if (productData.sku) {
             const existing = await this.prisma.product.findUnique({
                 where: { sku: productData.sku },
             });
             if (existing && existing.id !== id) {
+                // Delete uploaded files if update fails
+                files.forEach(file => this.deleteFile(join('uploads/products', file.filename)));
                 throw new ConflictException(`Product with SKU ${productData.sku} already exists`);
             }
         }
 
+        // Determine which images to delete
+        const imagesToDelete = currentProduct.images.filter(
+            img => !parsedExistingImages.includes(img.url)
+        );
+
+        // Delete files from disk
+        imagesToDelete.forEach(img => this.deleteFile(img.url));
+
+        // Delete records from DB and add new ones
         const product = await this.prisma.product.update({
             where: { id },
             data: {
                 ...productData,
-                images: images ? {
-                    deleteMany: {},
-                    create: images.map(img => ({
-                        url: img.url,
-                        displayOrder: img.displayOrder,
+                images: {
+                    deleteMany: {
+                        url: {
+                            in: imagesToDelete.map(img => img.url),
+                        },
+                    },
+                    create: files.map((file, index) => ({
+                        url: `/uploads/products/${file.filename}`,
+                        displayOrder: parsedExistingImages.length + index,
                     })),
-                } : undefined,
+                },
             },
             include: {
                 images: true,
@@ -108,7 +141,11 @@ export class ProductsService {
     }
 
     async remove(id: number) {
-        await this.findOne(id);
+        const product = await this.findOne(id);
+
+        // Delete all images from disk
+        product.images.forEach(img => this.deleteFile(img.url));
+
         return this.prisma.product.delete({
             where: { id },
         });

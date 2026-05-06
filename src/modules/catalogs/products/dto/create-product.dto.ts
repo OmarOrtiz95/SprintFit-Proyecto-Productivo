@@ -1,18 +1,6 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsInt, IsBoolean, IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsInt, IsBoolean } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-
-class CreateProductImageDto {
-    @ApiProperty({ example: 'https://example.com/product-image.jpg' })
-    @IsString()
-    @IsNotEmpty()
-    url: string;
-
-    @ApiProperty({ example: 0, required: false })
-    @IsInt()
-    @IsOptional()
-    displayOrder?: number;
-}
 
 export class CreateProductDto {
     @ApiProperty({ example: 'Camiseta de Compresión' })
@@ -31,33 +19,31 @@ export class CreateProductDto {
     sku: string;
 
     @ApiProperty({ example: 45000 })
+    @Transform(({ value }) => Number(value))
     @IsNumber()
     @IsNotEmpty()
     price: number;
 
     @ApiProperty({ example: 100, required: false })
+    @Transform(({ value }) => Number(value))
     @IsInt()
     @IsOptional()
     stockQuantity?: number;
 
     @ApiProperty({ example: true, required: false })
+    @Transform(({ value }) => value === 'true' || value === true)
     @IsBoolean()
     @IsOptional()
     isActive?: boolean;
 
     @ApiProperty({ example: { color: 'negro', talla: 'M' }, required: false })
     @IsOptional()
+    @Transform(({ value }) => typeof value === 'string' ? JSON.parse(value) : value)
     attributes?: any;
 
     @ApiProperty({ example: 1 })
+    @Transform(({ value }) => Number(value))
     @IsInt()
     @IsNotEmpty()
     categoryId: number;
-
-    @ApiProperty({ type: [CreateProductImageDto], required: false })
-    @IsArray()
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => CreateProductImageDto)
-    images?: CreateProductImageDto[];
 }

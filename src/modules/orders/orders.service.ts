@@ -91,6 +91,7 @@ export class OrdersService {
                     },
                 },
                 items: true,
+                payments: true,
             },
             orderBy: { createdAt: 'desc' },
         });

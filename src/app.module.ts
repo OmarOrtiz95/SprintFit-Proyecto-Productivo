@@ -7,6 +7,7 @@ import { CatalogsModule } from './modules/catalogs/catalogs.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CartModule } from './modules/cart/cart.module';
+import { WompiModule } from './modules/wompi/wompi.module';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { CartModule } from './modules/cart/cart.module';
         OrdersModule,
         PaymentsModule,
         CartModule,
+        WompiModule,
     ],
     controllers: [],
     providers: [],
