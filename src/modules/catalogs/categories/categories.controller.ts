@@ -28,6 +28,12 @@ export class CategoriesController {
         return this.categoriesService.findAll();
     }
 
+    @Get('slug/:slug')
+    @ApiOperation({ summary: 'Get a category by slug with children and products' })
+    findBySlug(@Param('slug') slug: string) {
+        return this.categoriesService.findBySlug(slug);
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get a category by ID' })
     findOne(@Param('id', ParseIntPipe) id: number) {
