@@ -6,16 +6,19 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { RequireVerified } from '../../common/decorators/require-verified.decorator';
+import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
 @Controller('orders')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), RolesGuard, EmailVerifiedGuard)
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
     @Post()
     @Roles(Role.CUSTOMER, Role.ADMIN)
+    @RequireVerified()
     @ApiOperation({ summary: 'Create a new order' })
     create(@Request() req, @Body() createOrderDto: CreateOrderDto) {
         return this.ordersService.create(req.user.id, createOrderDto);
@@ -30,6 +33,7 @@ export class OrdersController {
 
     @Get('my-orders')
     @Roles(Role.CUSTOMER, Role.ADMIN)
+    @RequireVerified()
     @ApiOperation({ summary: 'Get orders of the authenticated user' })
     findMyOrders(@Request() req) {
         return this.ordersService.findByUser(req.user.id);

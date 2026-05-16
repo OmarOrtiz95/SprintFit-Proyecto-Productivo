@@ -6,14 +6,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { EmailService } from './email.service';
-import { DatabaseModule } from '../../database/database.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
     imports: [
-        DatabaseModule,
         UsersModule,
         PassportModule,
+        EmailModule.forRootAsync(),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({
@@ -23,8 +22,8 @@ import { DatabaseModule } from '../../database/database.module';
             inject: [ConfigService],
         }),
     ],
-    providers: [AuthService, JwtStrategy, EmailService],
+    providers: [AuthService, JwtStrategy],
     controllers: [AuthController],
-    exports: [AuthService, EmailService],
+    exports: [AuthService],
 })
 export class AuthModule { }

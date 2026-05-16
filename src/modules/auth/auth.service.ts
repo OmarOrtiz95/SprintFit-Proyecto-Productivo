@@ -2,15 +2,16 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
-import { EmailService } from './email.service';
+import { EmailProvider } from '../email/email.provider';
+import { EmailVerificationService } from '../email/email-verification.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
-        private emailService: EmailService,
+        private emailProvider: EmailProvider,
+        private emailVerificationService: EmailVerificationService,
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -23,30 +24,37 @@ export class AuthService {
     }
 
     async login(user: any) {
-        const payload = { email: user.email, sub: user.id, role: user.role };
+        const payload = {
+            email: user.email,
+            sub: user.id,
+            role: user.role,
+            isEmailVerified: user.isEmailVerified,
+        };
         return {
             access_token: this.jwtService.sign(payload),
             user: {
                 id: user.id,
                 email: user.email,
                 fullName: user.fullName,
-                role: user.role
+                role: user.role,
             }
         };
     }
 
     async register(userData: any) {
         const user = await this.usersService.create(userData);
-        await this.emailService.sendVerificationEmail(user.id, user.email);
+        const token = await this.emailVerificationService.createToken(user.id);
+        await this.emailProvider.sendVerificationEmail(user.email, token);
         return this.login(user);
     }
 
     async verifyEmail(token: string) {
-        const verified = await this.emailService.verifyEmailToken(token);
-        if (!verified) {
+        const result = await this.emailVerificationService.verifyToken(token);
+        if (!result) {
             throw new UnauthorizedException('Invalid or expired verification token');
         }
-        return { message: 'Email successfully verified' };
+        const user = await this.usersService.findById(result.userId);
+        return this.login(user);
     }
 
     async getProfile(userId: number) {
